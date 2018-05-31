@@ -32,15 +32,19 @@ private slots:
 private:
 	Ui::MW *ui;
 	bool RollClick;
-	int RollNum;
+	int RollNum;		//Сген. число
+	int RollDelta;		//Дельта мин и мах значения рандома
+	int RollCount;		//Текушее число сравнивается с RollNum
 
-	int Count;
+	int RollCycle;		//3 режим кол-во циклов
+	int RollCycleSwitch;//число при котором изменяется скорость
 
 	int TimerDisp;
 	int CountDisp;
 	bool UpdateDisp;
-
 	int TimerCount;
+
+
 };
 
 #endif // MW_H

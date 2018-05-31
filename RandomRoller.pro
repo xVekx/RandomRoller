@@ -13,8 +13,10 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        mw.cpp
+        mw.cpp \
+    rand_alg.c
 
-HEADERS  += mw.h
+HEADERS  += mw.h \
+    rand_alg.h
 
 FORMS    += mw.ui

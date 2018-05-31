@@ -3,6 +3,7 @@
 
 #include <QTime>
 #include <QDebug>
+#include "rand_alg.h"
 //------------------------------------------------------------------------------
 #define QPRINT_VAL(__val) {qDebug()<<#__val<<":"<<__val;}
 //------------------------------------------------------------------------------
@@ -13,18 +14,20 @@ MW::MW(QWidget *parent) : QMainWindow(parent), ui(new Ui::MW) , RollClick(false)
 	QTime time = QTime::currentTime();
 	qsrand((uint)time.msec());
 
-	TimerCount = startTimer(10);
+	TimerCount = startTimer(50);
 	TimerDisp = startTimer(100);
 
 	ui->QLWSelect->addItems(QStringList()<<"Mode0"<<"Mode1"<<"Mode2");
-	ui->QLWSelect->setCurrentRow(0);
+	ui->QLWSelect->setCurrentRow(2);
 
 	//
 	int RMin = ui->QLEMin->text().toInt();
-	Count = RMin;
-	QString text = QString("%1").arg(Count);
+	RollCount = RMin;
+	QString text = QString("%1").arg(RollCount);
 	ui->QLInfo->setText(text);
 
+
+	RandAlg_TestLoop();
 }
 //------------------------------------------------------------------------------
 MW::~MW()
@@ -34,7 +37,7 @@ MW::~MW()
 //------------------------------------------------------------------------------
 int MW::randInt(int low, int high)
 {
-	return qrand() % ((high + 1) - low) + low;
+	return rand() % ((high + 1) - low) + low;
 }
 //------------------------------------------------------------------------------
 void MW::timerEvent(QTimerEvent *te)
@@ -75,17 +78,17 @@ void MW::TimerEventCount(QTimerEvent *te)
 				int RMin = ui->QLEMin->text().toInt();
 				int RMax = ui->QLEMax->text().toInt();
 
-				if(Count < RMax) {
-					Count++;
+				if(RollCount < RMax) {
+					RollCount++;
 				} else {
-					Count = RMin;
+					RollCount = RMin;
 				}
 
-				QPRINT_VAL(Count);
+				QPRINT_VAL(RollCount);
 
-				SetCountDisp(Count);
+				SetCountDisp(RollCount);
 
-				if(RollNum == Count) {
+				if(RollNum == RollCount) {
 					RollClick = false;
 					ui->QPBRoll->setDisabled(false);
 				}
@@ -95,14 +98,14 @@ void MW::TimerEventCount(QTimerEvent *te)
 		//Режим пожожий на выше описанный учитывает направление счета
 		if(RollClick == true) {
 
-			if(Count < RollNum) {
-				Count++;
-			} else if(Count > RollNum) {
-				Count--;
+			if(RollCount < RollNum) {
+				RollCount++;
+			} else if(RollCount > RollNum) {
+				RollCount--;
 			}
 
-			SetCountDisp(Count);
-			if(RollNum == Count) {
+			SetCountDisp(RollCount);
+			if(RollNum == RollCount) {
 				RollClick = false;
 				ui->QPBRoll->setDisabled(false);
 			}
@@ -111,47 +114,30 @@ void MW::TimerEventCount(QTimerEvent *te)
 	} else if(CurrMode == 2) {
 		if(RollClick == true) {
 
-			static int speed;
-			const int count_max = 20;
-			static int count;
-
-			static bool first = true;
-
-			if(first) {
-				first = false;
-				speed = 10;
-				count = 0;
-				qDebug()<<"first";
-			}
-
 			int RMin = ui->QLEMin->text().toInt();
 			int RMax = ui->QLEMax->text().toInt();
 
-			//for(int s=0;s<speed+1;s++) {
-				if(Count < RMax) {
-					Count++;
-				} else {
-					Count = RMin;
-				}
-			//}
 
-			if(count < count_max) {
-				count++;
+			//SetCountDisp(RollCount / );
+
+			static int id_tmp = 0;
+			static int id = 0;
+
+			if(id >= id_tmp) {
+
+				id = 0;
+				int rand = RandAlg_Step(RandAlg_Get(),&id_tmp);
+				SetCountDisp(rand);
+
+				printf("Rand:%i id:%i\n",rand,id_tmp);
+				fflush(stdout);
 			} else {
-				count=0;
-				if(speed > 0)
-					speed--;
+				id++;
 			}
 
-			//QPRINT_VAL(speed);
-			QPRINT_VAL(Count);
-			QPRINT_VAL(RollNum);
+			if(id_tmp < 0) {
 
-			SetCountDisp(Count);
-			if(RollNum == Count && speed == 0) {
-				qDebug()<<"RollNum == Count && speed == 0";
 				RollClick = false;
-				first = true;
 				ui->QPBRoll->setDisabled(false);
 			}
 		}
@@ -161,8 +147,8 @@ void MW::TimerEventCount(QTimerEvent *te)
 void MW::on_QPBClean_clicked()
 {
 	int RMin = ui->QLEMin->text().toInt();
-	Count = RMin;
-	QString text = QString("%1").arg(Count);
+	RollCount = RMin;
+	QString text = QString("%1").arg(RollCount);
 	ui->QLInfo->setText(text);
 }
 //------------------------------------------------------------------------------
@@ -175,6 +161,17 @@ void MW::on_QPBRoll_clicked()
 	QPRINT_VAL(randomValue);
 	RollNum = randomValue;
 	RollClick = true;
+	RollDelta = RMax - RMin;
+	RollCycle = 5;
+
+	RollCount = RollDelta * RollCycle + RollNum;
+
+	RollCycleSwitch = RollCount / 2;
+
+	RandAlg_TestInit();
+	RandAlg* ra = RandAlg_Get();
+	RandAlg_SetMinMax(ra,RMin,RMax);
+
 	ui->QPBRoll->setDisabled(true);
 }
 //------------------------------------------------------------------------------
